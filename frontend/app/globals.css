@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(124, 92, 255, 0.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(52, 224, 212, 0.06), transparent 55%),
+    #070A12;
+  color: #C7D2E4;
+}
+
+/* Hairline panel — the structural unit of the command center */
+.panel {
+  background: linear-gradient(180deg, rgba(13,19,32,0.9), rgba(13,19,32,0.6));
+  border: 1px solid #1B2436;
+  border-radius: 10px;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid #1B2436;
+}
+.eyebrow {
+  font: 600 10px/1 ui-monospace, monospace;
+  letter-spacing: 0.22em; text-transform: uppercase; color: #5C6B86;
+}
+
+/* Live indicator — the one place the cyan accent is allowed to breathe */
+.live-dot { position: relative; width: 7px; height: 7px; border-radius: 50%; background: #34E0D4; }
+.live-dot::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px solid #34E0D4; opacity: 0.5; animation: pulse 2.2s ease-out infinite;
+}
+@keyframes pulse { 0% { transform: scale(0.6); opacity: 0.6; } 100% { transform: scale(1.8); opacity: 0; } }
+
+.status-idle { color: #5C6B86; }
+.status-busy { color: #34E0D4; }
+.status-error { color: #FF5C72; }
+.status-offline { color: #5C6B86; opacity: 0.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot::after { animation: none; }
+}
