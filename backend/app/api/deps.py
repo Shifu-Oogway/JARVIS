@@ -16,3 +16,19 @@ def get_agents(request: Request) -> AgentRegistry:
 
 def get_core(request: Request) -> JarvisCore:
     return request.app.state.core
+
+
+def get_vault(request: Request):
+    return request.app.state.vault
+
+
+def get_store(request: Request):
+    return request.app.state.memory_store
+
+
+def get_context_engine(request: Request):
+    return request.app.state.context_engine
+
+
+def get_graph(request: Request):
+    return request.app.state.knowledge_graph

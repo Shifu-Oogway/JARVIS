@@ -57,12 +57,35 @@ publish failures are swallowed and logged.
 **healthy** subset, and fails over on error by demoting the endpoint. `HealthMonitor` re-probes
 every 30s. Everything is config-driven via `JARVIS_NIM_BASE_URL` + `JARVIS_NIM_EXTRA_ENDPOINTS`.
 
+## Memory subsystem (Phase 2)
+
+```
+objective ──► ContextAssemblyEngine
+                 1. semantic search   (MemoryStore + embeddings)   ◄─ layers: working/long_term/archive
+                 2. graph expansion   (KnowledgeGraph neighbours)
+                 3. rerank            (NeMo cross-encoder, optional)
+                 4. budget packing    (active context first, then by score)
+                 └─► ContextPackage ──► agent
+request result ──► MemoryCompressor: distil ──► vault note ──► MemoryStore (long_term)
+```
+
+- **Vault = source of truth** (markdown files); `MemoryStore` is the in-process vector index
+  hydrated from it on boot, so nothing is lost on restart.
+- **Embeddings**: hosted `nv-embedqa-e5-v5` (1024-dim) when `JARVIS_NIM_API_KEY` is set; a
+  deterministic hashing embedder otherwise, so semantic memory runs fully offline.
+- **Reranking**: set `JARVIS_NIM_RERANK_URL` to a NeMo `/v1/ranking` endpoint to enable the
+  cross-encoder; disabled → score ordering is used.
+- New endpoints: `GET /memory`, `POST /memory/search`, `POST /memory/context`,
+  `GET /vault/tree`, `GET /graph`.
+
 ## Phase roadmap
 
 - **Phase 1 — Foundation (shipped):** clean-arch backend, NIM layer, agent framework,
   Jarvis Core, DB models + Alembic, event bus + WS feed, metrics, Docker infra, dashboard shell.
-- **Phase 2 — Memory & Context:** rolling 4-layer context engine (active/working/long-term/archive),
-  context-assembly + relevance ranking, Obsidian bi-directional sync, knowledge graph, compression.
+- **Phase 2 — Memory & Obsidian (shipped):** Obsidian vault adapter (markdown + YAML frontmatter,
+  link/tag extraction), knowledge graph, NeMo Retriever embeddings (`nv-embedqa-e5-v5`) + reranker
+  (`llama-3.2-nv-rerankqa-1b-v2`), 4-layer rolling context engine with the 7-step assembly pipeline,
+  and Raw→Summary→Knowledge→Vault compression — wired into Jarvis Core.
 - **Phase 3 — Workflow engine:** explicit DAG with retries, timeouts, checkpointing,
   dead-letter queue, conditional + dynamic (agent-spawning) graphs, visual graph in dashboard.
 - **Phase 4 — Scheduler & autonomy:** cron/recurring/one-time/event-driven jobs; autonomous

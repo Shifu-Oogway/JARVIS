@@ -24,6 +24,13 @@ class Settings(BaseSettings):
 
     obsidian_vault_path: str = "/data/vault"
 
+    # NeMo Retriever (semantic memory)
+    nim_embed_model: str = "nvidia/nv-embedqa-e5-v5"
+    nim_rerank_model: str = "nvidia/llama-3.2-nv-rerankqa-1b-v2"
+    # Hosted reranking lives behind a retrieval URL; leave empty to disable reranking.
+    nim_rerank_url: str = ""
+    context_token_budget: int = 4000
+
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
     cors_origins: str = "http://localhost:3000"

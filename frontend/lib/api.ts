@@ -36,3 +36,20 @@ export async function sendChat(message: string): Promise<ChatResult> {
 export function eventsUrl(): string {
   return `${BASE.replace(/^http/, "ws")}/ws/events`;
 }
+
+export type MemoryOverview = {
+  counts: Record<string, number>;
+  recent: { id: string; layer: string; preview: string; vault_path: string | null }[];
+};
+
+export async function getMemory(): Promise<MemoryOverview> {
+  const r = await fetch(`${BASE}/memory`, { cache: "no-store" });
+  if (!r.ok) throw new Error("memory unavailable");
+  return r.json();
+}
+
+export async function getVaultTree(): Promise<Record<string, string[]>> {
+  const r = await fetch(`${BASE}/vault/tree`, { cache: "no-store" });
+  if (!r.ok) throw new Error("vault unavailable");
+  return r.json();
+}

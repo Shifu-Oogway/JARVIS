@@ -6,7 +6,14 @@ layered memory backed by an Obsidian vault, and runs autonomous + scheduled work
 
 This repository is delivered in **executable phases**. Each phase compiles and runs before the next.
 
-## What ships in Phase 1 (this drop)
+## Shipped so far
+
+**Phase 2 — Memory & Obsidian** adds: the Obsidian vault adapter (markdown + frontmatter,
+link/tag extraction), a knowledge graph, NeMo Retriever embeddings + reranker, the 4-layer rolling
+context-assembly engine, and Raw→Summary→Knowledge→Vault compression — all wired into Jarvis Core.
+New endpoints: `/memory`, `/memory/search`, `/memory/context`, `/vault/tree`, `/graph`.
+
+## Phase 1 — Foundation
 
 A runnable backbone that the remaining subsystems plug into:
 

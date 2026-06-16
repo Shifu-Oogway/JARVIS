@@ -21,8 +21,8 @@ class ModelSpec:
 # Default routing table. Swap model ids for whatever your NIM gateway serves.
 _DEFAULT: list[ModelSpec] = [
     ModelSpec("meta/llama-3.3-70b-instruct", AgentRole.RESEARCH, 128000, 4, frozenset({"chat", "tools", "long_context"})),
-    ModelSpec("meta/codellama-70b", AgentRole.CODING, 16384, 4, frozenset({"chat", "code"})),
-    ModelSpec("nvidia/nemotron-4-340b-instruct", AgentRole.PLANNING, 4096, 2, frozenset({"chat", "reasoning"})),
+    ModelSpec("qwen/qwen2.5-coder-32b-instruct", AgentRole.CODING, 32768, 4, frozenset({"chat", "code"})),
+    ModelSpec("nvidia/llama-3.1-nemotron-70b-instruct", AgentRole.PLANNING, 128000, 2, frozenset({"chat", "reasoning"})),
     ModelSpec("meta/llama-3.3-70b-instruct", AgentRole.ANALYSIS, 128000, 4, frozenset({"chat", "tools"})),
     ModelSpec("meta/llama-3.3-70b-instruct", AgentRole.EXECUTIVE, 128000, 2, frozenset({"chat"})),
     ModelSpec("meta/llama-3.1-8b-instruct", AgentRole.AUTOMATION, 8192, 8, frozenset({"chat", "fast"})),

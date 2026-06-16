@@ -29,9 +29,12 @@ _PLANNER_PROMPT = (
 
 
 class JarvisCore:
-    def __init__(self, router: NIMRouter, agents: AgentRegistry) -> None:
+    def __init__(self, router: NIMRouter, agents: AgentRegistry,
+                 context_engine=None, compressor=None) -> None:
         self._router = router
         self._agents = agents
+        self._context = context_engine   # ContextAssemblyEngine | None
+        self._compressor = compressor    # MemoryCompressor | None
 
     # -- planning --------------------------------------------------------
     async def decompose(self, request: str) -> Plan:
@@ -56,6 +59,11 @@ class JarvisCore:
         await event_bus.publish("task.started", {"id": task.id, "role": task.role})
         try:
             agent = self._agents.get(task.role)
+            if self._context is not None:
+                pkg = await self._context.assemble(task.objective, active_context=context)
+                context = pkg.text or context
+                await event_bus.publish("context.assembled",
+                    {"task": task.id, "tokens": pkg.token_estimate, "layers": pkg.layers_used})
             result = await agent.run(task.objective, context=context)
             task.mark(TaskStatus.SUCCEEDED, result=result)
             await event_bus.publish("task.succeeded", {"id": task.id})
@@ -101,6 +109,12 @@ class JarvisCore:
         plan = await self.decompose(request)
         await self.execute(plan)
         answer = await self.synthesize(plan)
+        if self._compressor is not None and answer:
+            try:
+                await self._compressor.to_knowledge(
+                    f"Request: {request}\n\n{answer}", title=request[:60], folder="Reports")
+            except Exception as exc:  # noqa: BLE001
+                log.warning("persist_failed", error=str(exc))
         await event_bus.publish("request.completed", {"plan_id": plan.id})
         return {
             "plan_id": plan.id,

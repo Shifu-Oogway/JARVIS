@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  getAgents, sendChat, eventsUrl,
-  type AgentView, type JarvisEvent, type ChatResult,
+  getAgents, sendChat, eventsUrl, getMemory, getVaultTree,
+  type AgentView, type JarvisEvent, type ChatResult, type MemoryOverview,
 } from "@/lib/api";
 
 export default function CommandCenter() {
@@ -13,14 +13,19 @@ export default function CommandCenter() {
   const [input, setInput] = useState("");
   const [result, setResult] = useState<ChatResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [memory, setMemory] = useState<MemoryOverview | null>(null);
+  const [vault, setVault] = useState<Record<string, string[]>>({});
   const feedRef = useRef<HTMLDivElement>(null);
 
   // poll agents
   useEffect(() => {
     let alive = true;
-    const tick = () =>
+    const tick = () => {
       getAgents().then((a) => alive && (setAgents(a), setOnline(true)))
         .catch(() => alive && setOnline(false));
+      getMemory().then((m) => alive && setMemory(m)).catch(() => {});
+      getVaultTree().then((t) => alive && setVault(t)).catch(() => {});
+    };
     tick();
     const id = setInterval(tick, 4000);
     return () => { alive = false; clearInterval(id); };
@@ -135,11 +140,33 @@ export default function CommandCenter() {
           </div>
         </section>
 
-        {/* Placeholder centers (Phase 2 subsystems) */}
+        {/* Memory Center — live (Phase 2) */}
+        <section className="panel">
+          <div className="panel-head"><span className="eyebrow">Memory Center</span></div>
+          <div className="p-4">
+            <div className="grid grid-cols-4 gap-2">
+              {(["active", "working", "long_term", "archive"] as const).map((layer) => (
+                <div key={layer} className="rounded-md border border-edge p-2 text-center">
+                  <div className="font-mono text-lg text-live">{memory?.counts?.[layer] ?? 0}</div>
+                  <div className="eyebrow mt-1">{layer.replace("_", " ")}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 space-y-1 font-mono text-[11px] text-muted">
+              {Object.entries(vault).filter(([, v]) => v.length).map(([folder, notes]) => (
+                <div key={folder} className="flex justify-between border-b border-edge/40 py-0.5">
+                  <span className="text-surge">{folder}</span><span>{notes.length}</span>
+                </div>
+              ))}
+              {Object.values(vault).every((v) => v.length === 0) && <span>Vault empty.</span>}
+            </div>
+          </div>
+        </section>
+
+        {/* Remaining Phase 3+ subsystems */}
         {[
-          ["Workflow Center", "DAG execution graphs land in Phase 2."],
-          ["Memory Center", "Rolling context + Obsidian vault land in Phase 2."],
-          ["Maintenance Center", "Backups, updates & health land in Phase 2."],
+          ["Workflow Center", "DAG execution graphs land in Phase 3."],
+          ["Maintenance Center", "Backups, updates & health land in Phase 6."],
         ].map(([title, note]) => (
           <section key={title} className="panel">
             <div className="panel-head"><span className="eyebrow">{title}</span></div>

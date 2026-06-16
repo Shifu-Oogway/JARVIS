@@ -11,6 +11,13 @@ from app.core.config import get_settings
 from app.core.events import event_bus
 from app.core.logging import configure_logging, get_logger
 from app.core_engine.jarvis_core import JarvisCore
+from app.infrastructure.obsidian.graph import KnowledgeGraph
+from app.infrastructure.obsidian.vault import ObsidianVault
+from app.memory.compression import MemoryCompressor
+from app.memory.context_engine import ContextAssemblyEngine
+from app.memory.embeddings import get_embedding_provider
+from app.memory.reranker import Reranker
+from app.memory.store import MemoryStore
 from app.infrastructure.db.session import init_models
 from app.infrastructure.nim.router import NIMRouter
 
@@ -27,11 +34,34 @@ async def lifespan(app: FastAPI):
     nim_router = NIMRouter()
     await nim_router.start()
     agents = AgentRegistry(nim_router)
-    core = JarvisCore(nim_router, agents)
+
+    # --- Memory & Obsidian subsystem (Phase 2) ---
+    vault = ObsidianVault(settings.obsidian_vault_path)
+    try:
+        vault.ensure_structure()
+    except OSError as exc:
+        log.warning("vault_unavailable", error=str(exc))
+    embedder = get_embedding_provider()
+    store = MemoryStore(embedder)
+    try:
+        n = await store.hydrate_from_vault(vault)
+        log.info("memory_hydrated", notes=n)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("memory_hydrate_failed", error=str(exc))
+    reranker = Reranker()
+    graph = KnowledgeGraph.build(vault) if vault.root.exists() else KnowledgeGraph()
+    context_engine = ContextAssemblyEngine(
+        store, reranker, vault, graph, token_budget=settings.context_token_budget)
+    compressor = MemoryCompressor(nim_router, vault, store)
+    core = JarvisCore(nim_router, agents, context_engine=context_engine, compressor=compressor)
 
     app.state.nim_router = nim_router
     app.state.agents = agents
     app.state.core = core
+    app.state.vault = vault
+    app.state.memory_store = store
+    app.state.context_engine = context_engine
+    app.state.knowledge_graph = graph
 
     try:
         await init_models()

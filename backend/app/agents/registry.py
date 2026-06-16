@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.agents.base import BaseAgent
+from app.agents.memory_agent import MemoryAgent
 from app.agents.research_agent import ResearchAgent
 from app.domain.enums import AgentRole
 from app.infrastructure.nim.router import NIMRouter
@@ -19,6 +20,7 @@ class AgentRegistry:
     def __init__(self, router: NIMRouter) -> None:
         self._agents: dict[AgentRole, BaseAgent] = {
             AgentRole.RESEARCH: ResearchAgent(router),
+            AgentRole.MEMORY: MemoryAgent(router),
         }
         for role in AgentRole:
             self._agents.setdefault(role, _GenericAgent(role, router))
